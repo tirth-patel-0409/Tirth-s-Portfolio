@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
   const { name, email, subject_line, message } = req.body;
 
-  // Basic server-side verification validation
+  // Basic server-side validation
   if (!name || !email || !message) {
     return res.status(400).json({ success: false, error: 'Name, email, and message are required fields.' });
   }
@@ -28,19 +28,21 @@ export default async function handler(req, res) {
   const serviceId = process.env.EMAILJS_SERVICE_ID;
   const templateId = process.env.EMAILJS_TEMPLATE_ID;
   const publicKey = process.env.EMAILJS_PUBLIC_KEY;
+  const privateKey = process.env.EMAILJS_PRIVATE_KEY; // Required for server-side (strict mode) access
 
-  if (!serviceId || !templateId || !publicKey) {
+  if (!serviceId || !templateId || !publicKey || !privateKey) {
     return res.status(500).json({ 
       success: false, 
-      error: 'Server Configuration Error: EmailJS environment variables are missing on the hosting platform.' 
+      error: 'Server Configuration Error: One or more EmailJS environment variables are missing. Ensure EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY, and EMAILJS_PRIVATE_KEY are all set on the hosting platform.' 
     });
   }
 
-  // Compile payload matching target EmailJS variables
+  // Compile payload — accessToken is required for server-side strict mode
   const emailJsPayload = {
     service_id: serviceId,
     template_id: templateId,
     user_id: publicKey,
+    accessToken: privateKey,  // Private key required for non-browser server calls
     template_params: {
       name,
       email,
